@@ -46,7 +46,8 @@
     console.log('API Base URL:', API_BASE);
 
     function buildUrl(endpoint, params = {}) {
-        const url = new URL(endpoint, API_BASE);
+        const baseUrl = new URL(API_BASE, window.location.href);
+        const url = new URL(endpoint, baseUrl);
         Object.entries(params || {}).forEach(([key, value]) => {
             if (value === undefined || value === null) return;
             url.searchParams.set(key, value);
@@ -56,7 +57,9 @@
 
     // Helper to handle fetch responses
     async function request(endpoint, options = {}, params = {}) {
-        const url = buildUrl(API_BASE + endpoint, params);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        let url = '';
         const defaults = {
             credentials: 'include', // send cookies/session
             headers: {
@@ -79,24 +82,37 @@
         if (config.body && typeof config.body === 'object') {
             config.body = JSON.stringify(config.body);
         }
+        config.signal = config.signal || controller.signal;
 
         try {
+            url = buildUrl(API_BASE + endpoint, params);
             const response = await fetch(url, config);
             const contentType = response.headers.get('content-type') || '';
             if (!contentType.includes('application/json')) {
                 // Response is not JSON – likely a 404 or HTML error
                 const text = await response.text();
                 console.error('Non-JSON API response', { url, status: response.status, contentType, snippet: text.substring(0, 200) });
+                if (response.status === 403) {
+                    return { success: false, message: 'The login service is not connected yet. Please try again later.' };
+                }
                 return { success: false, message: `Server error (${response.status}) – check the API URL.` };
             }
             const data = await response.json();
             if (!response.ok) {
-                return { success: false, message: data.message || 'Request failed' };
+                if (response.status === 403 && data.error && data.error.code === '403') {
+                    return { success: false, message: 'The login service is not connected yet. Please try again later.' };
+                }
+                return { success: false, message: data.message || (data.error && data.error.message) || 'Request failed' };
             }
             return data;
         } catch (err) {
             console.error('Fetch failed', { url, err });
+            if (err.name === 'AbortError') {
+                return { success: false, message: 'The login service took too long to respond. Please try again later.' };
+            }
             return { success: false, message: 'Network error – is the backend running?' };
+        } finally {
+            clearTimeout(timeoutId);
         }
     }
 
