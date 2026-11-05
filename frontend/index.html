@@ -598,6 +598,51 @@
             text-decoration: underline;
         }
 
+        .demo-access {
+            margin-top: 1.25rem;
+            padding: 1rem;
+            border: 1px solid rgba(250, 204, 21, 0.18);
+            border-radius: 14px;
+            background: rgba(250, 204, 21, 0.045);
+            color: rgba(255, 255, 255, 0.65);
+            font-size: 0.78rem;
+            line-height: 1.55;
+        }
+
+        .demo-access strong {
+            color: #facc15;
+        }
+
+        .demo-credentials {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 0.2rem 0.6rem;
+            margin: 0.6rem 0 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            overflow-wrap: anywhere;
+        }
+
+        .demo-credentials span:first-child,
+        .demo-credentials span:nth-child(3) {
+            color: rgba(255, 255, 255, 0.38);
+        }
+
+        .demo-fill {
+            padding: 0;
+            border: 0;
+            background: none;
+            color: #facc15;
+            font: inherit;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .demo-fill:hover {
+            color: #fde047;
+            text-decoration: underline;
+        }
+
         /* ── Fullscreen Login Loader ── */
         .login-loader {
             position: fixed;
@@ -871,7 +916,7 @@
             <div class="logo-icon">AS</div>
             <div class="logo-text">Auto<span>Stock</span></div>
         </div>
-        <div class="status-pill"><span class="pulse-dot"></span> Systems operational</div>
+        <div class="status-pill"><span class="pulse-dot"></span> Read-only demo available</div>
     </header>
 
     <!-- ── Shell ── -->
@@ -930,7 +975,7 @@
 
                 <div class="eyebrow">Dealer Login</div>
                 <h2>Welcome back</h2>
-                <div class="sub">Sign in to manage inventory and check-ins.</div>
+                <div class="sub">Sign in to your account, or try the read-only demo.</div>
 
                 <div class="form-error" id="formError"></div>
 
@@ -952,6 +997,16 @@
                 <div class="auth-switch">
                     New to AutoStock? <a href="register.html">Create an account</a>
                 </div>
+
+                <aside class="demo-access" aria-label="Demo account access">
+                    <strong>Try the read-only demo</strong>
+                    <div class="demo-credentials">
+                        <span>Email</span><span>demo@autostock.example</span>
+                        <span>Password</span><span>AutoStockDemo!2026</span>
+                    </div>
+                    Sample data only; demo changes are not saved.
+                    <button class="demo-fill" id="fillDemoCredentials" type="button">Fill demo login</button>
+                </aside>
             </div>
         </section>
 
@@ -973,7 +1028,7 @@
 
 <!-- ── Scripts ── -->
 <script src="./js/api.js?v=20261105a"></script>
-    <script src="./js/auth.js?v=20260805b"></script>
+    <script src="./js/auth.js?v=20261105b"></script>
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
 
 </body>

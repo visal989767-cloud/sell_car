@@ -12,6 +12,19 @@ and logs test drives / reservations via check-in / check-out.
 - Check-out / check-in flow for test drives & reservations, tied to a vehicle's status
 - All data access goes through MySQL **stored procedures**, called from PHP via PDO
 
+## Hosted demo login
+
+The static frontend includes a public, read-only sample preview:
+
+- Email: `demo@autostock.example`
+- Password: `AutoStockDemo!2026`
+
+These public demo credentials open only `frontend/demo.html`, which contains
+hard-coded sample inventory and does not connect to the account database. Demo
+changes are not saved. Do not use these credentials for any other service.
+Normal account login still requires the PHP/MySQL backend to be deployed and
+connected.
+
 ## Folder structure
 
 ```

@@ -69,6 +69,14 @@ if (togglePasswordBtn) {
     });
 }
 
+const fillDemoCredentialsBtn = document.getElementById('fillDemoCredentials');
+if (fillDemoCredentialsBtn) {
+    fillDemoCredentialsBtn.addEventListener('click', () => {
+        document.getElementById('email').value = 'demo@autostock.example';
+        document.getElementById('password').value = 'AutoStockDemo!2026';
+    });
+}
+
 // ---- Login form ----
 const loginForm = document.getElementById('loginForm');
 if (loginForm) {
@@ -92,6 +100,15 @@ if (loginForm) {
 
         let timers = [];
         timers = runLoaderTimeline();
+
+        if (email.toLowerCase() === 'demo@autostock.example' && password === 'AutoStockDemo!2026') {
+            timers.forEach(clearTimeout);
+            setLoaderProgress(100, 'Opening read-only demo…');
+            setTimeout(() => {
+                window.location.href = 'demo.html';
+            }, 500);
+            return;
+        }
 
         // ✅ FIX: Call the API
         const api = getApi();
