@@ -52,7 +52,8 @@ http://localhost/car-seller-management-system-fixed (1)/frontend/register.html
 
 ### Step 1: Create Database
 ```bash
-mysql -u root -p < backend/sql/schema.sql
+mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS car_seller_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+mysql -u root -p car_seller_db < backend/sql/schema.sql
 ```
 
 ### Step 2: Seed Sample Data
@@ -74,6 +75,10 @@ Deploy the `backend/` and `frontend/` folders to your web server's document root
 
 ### Step 5: Access the App
 Open `http://localhost/frontend/` in your browser.
+
+To create the first administrator, set `INITIAL_ADMIN_SETUP_TOKEN` on the
+backend and enter that one-time code during registration. All other new
+registrations receive the staff role.
 
 ## Features Breakdown
 
@@ -125,4 +130,3 @@ Open `http://localhost/frontend/` in your browser.
 - **Widget:** React 18 (CDN) for payment summary component
 - **Database:** MySQL with 6 tables, 17 stored procedures
 - **Auth:** PHP sessions + bcrypt password hashing
-

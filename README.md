@@ -44,11 +44,14 @@ car-seller-management-system/
 
 1. Create the database and stored procedures:
    ```bash
-   mysql -u root -p < backend/sql/schema.sql
+   mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS car_seller_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+   mysql -u root -p car_seller_db < backend/sql/schema.sql
    ```
-2. This creates the `car_seller_db` database, its tables, and all stored procedures.
+2. This creates the `car_seller_db` tables and stored procedures.
    No demo user is seeded — you'll create your first account through the app itself
-   (see step 4).
+   (see step 4). To create the first administrator, set `INITIAL_ADMIN_SETUP_TOKEN`
+   on the backend and enter that one-time code during registration. All other
+   registrations receive the staff role.
 
 ### 2. Backend
 
@@ -68,8 +71,8 @@ The frontend is plain static HTML/CSS/JS — no build step required.
   `frontend/index.html` through your local server
   (e.g. `http://localhost/car-seller-management-system/frontend/`).
 - The frontend calls the API at `../backend/api/...` (see `frontend/js/api.js`,
-  `API_BASE`) — update that constant if you host the backend elsewhere
-  (e.g. a different domain — CORS headers are already set to allow this).
+  `API_BASE`). Configure `CORS_ALLOWED_ORIGINS` with exact origins if you host
+  the backend on a different domain.
 
 ### 4. First login
 

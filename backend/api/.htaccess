@@ -1,0 +1,3 @@
+<FilesMatch "^(create_test_user|create_user_visal)\.php$">
+    Require all denied
+</FilesMatch>

@@ -149,7 +149,7 @@ if (registerForm) {
         const email = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value;
         const confirm = document.getElementById('confirmPassword').value;
-        const role = document.getElementById('role').value;
+        const admin_setup_token = document.getElementById('adminSetupToken').value;
 
         if (password !== confirm) {
             errorBox.textContent = 'Passwords do not match.';
@@ -162,7 +162,7 @@ if (registerForm) {
         btn.textContent = 'Creating account…';
 
         const api = getApi();
-        const res = await api.post('register.php', { full_name, email, password, role });
+        const res = await api.post('register.php', { full_name, email, password, admin_setup_token });
 
         btn.disabled = false;
         btn.textContent = 'Create Account';

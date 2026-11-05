@@ -27,7 +27,8 @@ $body = json_body();
 $fullName = trim($body['full_name'] ?? '');
 $email    = trim($body['email'] ?? '');
 $password = $body['password'] ?? '';
-$role     = in_array($body['role'] ?? '', ['admin', 'staff'], true) ? $body['role'] : 'staff';
+$setupToken = trim($body['admin_setup_token'] ?? '');
+$configuredSetupToken = getenv('INITIAL_ADMIN_SETUP_TOKEN') ?: '';
 
 if ($fullName === '' || $email === '' || $password === '') {
     respond(false, null, 'Full name, email and password are required.', 422);
@@ -47,18 +48,58 @@ try {
     }
     $stmt->closeCursor();
 
+    $role = 'staff';
+    $lockAcquired = false;
+    if ($setupToken !== '') {
+        if ($configuredSetupToken === '' || !hash_equals($configuredSetupToken, $setupToken)) {
+            respond(false, null, 'The administrator setup code is invalid.', 403);
+        }
+
+        $lockStmt = $pdo->query("SELECT GET_LOCK('autostock_initial_admin', 10)");
+        if ((int) $lockStmt->fetchColumn() !== 1) {
+            respond(false, null, 'Could not reserve administrator setup. Please try again.', 503);
+        }
+        $lockAcquired = true;
+
+        $adminCount = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'admin'")->fetchColumn();
+        if ($adminCount > 0) {
+            $pdo->query("SELECT RELEASE_LOCK('autostock_initial_admin')");
+            $lockAcquired = false;
+            respond(false, null, 'The initial administrator has already been created.', 409);
+        }
+        $role = 'admin';
+    }
+
     $hash = password_hash($password, PASSWORD_BCRYPT);
 
-    $stmt = $pdo->prepare('CALL sp_register_user(:full_name, :email, :password_hash, :role)');
-    $stmt->execute([
-        'full_name'     => $fullName,
-        'email'         => $email,
-        'password_hash' => $hash,
-        'role'          => $role,
-    ]);
-    $row = $stmt->fetch();
+    try {
+        $stmt = $pdo->prepare('CALL sp_register_user(:full_name, :email, :password_hash, :role)');
+        $stmt->execute([
+            'full_name'     => $fullName,
+            'email'         => $email,
+            'password_hash' => $hash,
+            'role'          => $role,
+        ]);
+        $row = $stmt->fetch();
+        $stmt->closeCursor();
+    } catch (PDOException $e) {
+        if ($lockAcquired) {
+            $pdo->query("SELECT RELEASE_LOCK('autostock_initial_admin')");
+            $lockAcquired = false;
+        }
+        throw $e;
+    }
+
+    if ($lockAcquired) {
+        $pdo->query("SELECT RELEASE_LOCK('autostock_initial_admin')");
+        $lockAcquired = false;
+    }
 
     respond(true, ['id' => $row['new_user_id'] ?? null], 'Account created successfully. You can now log in.', 201);
 } catch (PDOException $e) {
-    respond(false, null, 'Registration failed: ' . $e->getMessage(), 500);
+    if (!empty($lockAcquired)) {
+        $pdo->query("SELECT RELEASE_LOCK('autostock_initial_admin')");
+    }
+    error_log('Registration failed: ' . $e->getMessage());
+    respond(false, null, 'Registration failed. Please try again.', 500);
 }

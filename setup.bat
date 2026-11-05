@@ -5,10 +5,15 @@ echo   AutoStock - Car Seller Management System Setup
 echo ======================================================
 echo.
 echo [1/4] Setting up database schema...
-mysql -u root < "%~dp0backend\sql\schema.sql"
+mysql -u root -e "CREATE DATABASE IF NOT EXISTS car_seller_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 if %ERRORLEVEL% NEQ 0 (
-    echo [!] Schema creation failed. Make sure MySQL is running.
-    echo     Try: mysql -u root -p ^< backend\sql\schema.sql
+    echo [!] Database creation failed. Make sure MySQL is running.
+    pause
+    exit /b 1
+)
+mysql -u root car_seller_db < "%~dp0backend\sql\schema.sql"
+if %ERRORLEVEL% NEQ 0 (
+    echo [!] Schema creation failed. Check the MySQL output above.
     pause
     exit /b 1
 )
@@ -46,4 +51,3 @@ echo.
 echo ======================================================
 echo.
 pause
-

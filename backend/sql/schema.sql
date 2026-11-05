@@ -3,11 +3,6 @@
 -- Database schema + Stored Procedures (MySQL)
 -- ============================================================
 
-CREATE DATABASE IF NOT EXISTS car_seller_db
-  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
-USE car_seller_db;
-
 -- ------------------------------------------------------------
 -- Table: users  (login / register)
 -- ------------------------------------------------------------
@@ -39,25 +34,6 @@ CREATE TABLE IF NOT EXISTS cars (
   updated_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
--- ------------------------------------------------------------
--- Table: checkinout  (test drive / reservation check-in-check-out log)
--- ------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS checkinout (
-  id            INT AUTO_INCREMENT PRIMARY KEY,
-  car_id        INT NOT NULL,
-  customer_name VARCHAR(120) NOT NULL,
-  customer_phone VARCHAR(30),
-  purpose       ENUM('test_drive','reservation') NOT NULL DEFAULT 'test_drive',
-  check_out_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  check_in_at   DATETIME NULL,
-  notes         VARCHAR(255),
-  handled_by    INT,
-  booking_id    INT NULL,
-  CONSTRAINT fk_checkinout_car FOREIGN KEY (car_id) REFERENCES cars(id) ON DELETE CASCADE,
-  CONSTRAINT fk_checkinout_user FOREIGN KEY (handled_by) REFERENCES users(id) ON DELETE SET NULL,
-  CONSTRAINT fk_checkinout_booking FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE SET NULL
-) ENGINE=InnoDB;
-
 -- ============================================================
 -- STORED PROCEDURES
 -- ============================================================
@@ -83,6 +59,25 @@ CREATE TABLE IF NOT EXISTS bookings (
   created_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT fk_booking_car FOREIGN KEY (car_id) REFERENCES cars(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- ------------------------------------------------------------
+-- Table: checkinout  (test drive / reservation check-in-check-out log)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS checkinout (
+  id            INT AUTO_INCREMENT PRIMARY KEY,
+  car_id        INT NOT NULL,
+  customer_name VARCHAR(120) NOT NULL,
+  customer_phone VARCHAR(30),
+  purpose       ENUM('test_drive','reservation') NOT NULL DEFAULT 'test_drive',
+  check_out_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  check_in_at   DATETIME NULL,
+  notes         VARCHAR(255),
+  handled_by    INT,
+  booking_id    INT NULL,
+  CONSTRAINT fk_checkinout_car FOREIGN KEY (car_id) REFERENCES cars(id) ON DELETE CASCADE,
+  CONSTRAINT fk_checkinout_user FOREIGN KEY (handled_by) REFERENCES users(id) ON DELETE SET NULL,
+  CONSTRAINT fk_checkinout_booking FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 -- ------------------------------------------------------------

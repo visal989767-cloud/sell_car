@@ -10,18 +10,35 @@ ini_set('display_errors', '0');
 ini_set('log_errors', '1');
 error_reporting(E_ALL);
 
+$isHttps = (
+    (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+    || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https'
+);
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path' => '/',
+    'secure' => strtolower(getenv('APP_ENV') ?: '') === 'production' || $isHttps,
+    'httponly' => true,
+    'samesite' => 'Lax',
+]);
 session_start();
 
-// Browsers block "Access-Control-Allow-Origin: *" when the request uses
-// credentials. For localhost/file-based usage, we explicitly allow the
-// request origin (or the special "null" origin) and keep credentials enabled.
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 $originHost = strtolower(parse_url($origin, PHP_URL_HOST) ?? '');
+$allowedOrigins = array_filter(array_map(
+    'trim',
+    explode(',', getenv('CORS_ALLOWED_ORIGINS') ?: '')
+));
 $allowedOrigin = '';
 
-if ($origin === 'null' || $originHost === 'localhost' || $originHost === '127.0.0.1') {
-    $allowedOrigin = $origin !== '' ? $origin : 'http://localhost';
-} elseif ($origin !== '') {
+if (
+    $origin !== ''
+    && (
+        $originHost === 'localhost'
+        || $originHost === '127.0.0.1'
+        || in_array($origin, $allowedOrigins, true)
+    )
+) {
     $allowedOrigin = $origin;
 }
 
@@ -29,14 +46,11 @@ if ($allowedOrigin !== '') {
     header('Access-Control-Allow-Origin: ' . $allowedOrigin);
     header('Access-Control-Allow-Credentials: true');
     header('Vary: Origin');
-} else {
-    header('Access-Control-Allow-Origin: http://localhost');
-    header('Access-Control-Allow-Credentials: true');
 }
 
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, X-HTTP-Method-Override');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
@@ -55,7 +69,7 @@ register_shutdown_function(function () {
         }
         echo json_encode([
             'success' => false,
-            'message' => 'Server error: ' . $error['message'],
+            'message' => 'Server error.',
             'data'    => null,
         ]);
     }

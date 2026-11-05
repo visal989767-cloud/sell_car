@@ -4,3 +4,11 @@
 # because browsers reject "*" combined with credentials (that combo is invalid
 # per the CORS spec and silently blocks the frontend from reaching the API).
 Options -Indexes
+
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+<FilesMatch "^(Dockerfile|docker-entrypoint\.sh)$">
+    Require all denied
+</FilesMatch>
