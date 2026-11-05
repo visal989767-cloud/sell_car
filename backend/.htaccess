@@ -1,0 +1,6 @@
+# CORS is handled per-request in backend/includes/bootstrap.php so it can
+# echo back the specific requesting origin together with
+# Access-Control-Allow-Credentials: true. A wildcard "*" here MUST NOT be set,
+# because browsers reject "*" combined with credentials (that combo is invalid
+# per the CORS spec and silently blocks the frontend from reaching the API).
+Options -Indexes

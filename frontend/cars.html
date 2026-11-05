@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Inventory · AutoStock</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <style>
+        /* ── Reset & Base ── */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0b0d10;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+        }
+
+        /* ── Background with car image ── */
+        .app-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background:
+                linear-gradient(135deg,
+                    rgba(0, 0, 0, 0.78) 0%,
+                    rgba(0, 0, 0, 0.60) 50%,
+                    rgba(0, 0, 0, 0.82) 100%),
+                url('https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=1600&q=80') center/cover no-repeat;
+            background-attachment: fixed;
+        }
+
+        .app-backdrop::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 20% 80%, rgba(180, 30, 30, 0.10) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 20%, rgba(200, 160, 60, 0.06) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        /* ── 3D Background Car ── */
+        .bg3d {
+            position: fixed;
+            right: -40px;
+            bottom: -50px;
+            width: 400px;
+            height: 280px;
+            z-index: 0;
+            opacity: 0.38;
+            pointer-events: none;
+            filter: drop-shadow(0 0 40px rgba(250, 204, 21, 0.14));
+        }
+
+        .bg3d model-viewer {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        @media (max-width: 1024px) {
+            .bg3d {
+                width: 280px;
+                height: 200px;
+                right: -30px;
+                bottom: -30px;
+                opacity: 0.3;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .bg3d {
+                width: 210px;
+                height: 150px;
+                opacity: 0.22;
+            }
+        }
+
+        /* ── App Shell ── */
+        .app-shell {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 1440px;
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            gap: 0;
+            padding: 1.25rem;
+        }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            background: rgba(18, 22, 28, 0.75);
+            backdrop-filter: blur(24px) saturate(1.3);
+            -webkit-backdrop-filter: blur(24px) saturate(1.3);
+            border-radius: 24px;
+            padding: 1.75rem 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            height: fit-content;
+            min-height: 480px;
+            position: sticky;
+            top: 1.25rem;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 2.25rem;
+            padding-bottom: 1.25rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .brand .mark {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #facc15, #f59e0b);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Oswald', sans-serif;
+            font-weight: 700;
+            font-size: 1.4rem;
+            color: #0b0d10;
+            box-shadow: 0 6px 20px rgba(250, 204, 21, 0.2);
+            flex-shrink: 0;
+        }
+
+        .brand .name {
+            font-family: 'Oswald', sans-serif;
+            font-weight: 600;
+            font-size: 1.3rem;
+            letter-spacing: 0.03em;
+            color: #fff;
+            line-height: 1.2;
+        }
+
+        .brand .name small {
+            display: block;
+            font-family: 'Inter', sans-serif;
+            font-weight: 400;
+            font-size: 0.6rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.3);
+            margin-top: 0.05rem;
+        }
+
+        .nav {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+            flex: 1;
+        }
+
+        .nav a {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.7rem 1rem;
+            border-radius: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .nav a .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
+            transition: background 0.2s;
+        }
+
+        .nav a:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .nav a:hover .dot {
+            background: #facc15;
+        }
+
+        .nav a.active {
+            color: #fff;
+            background: rgba(250, 204, 21, 0.08);
+        }
+
+        .nav a.active .dot {
+            background: #facc15;
+            box-shadow: 0 0 12px rgba(250, 204, 21, 0.3);
+        }
+
+        .user-box {
+            margin-top: 1.5rem;
+            padding-top: 1.25rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .user-chip {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .user-chip .avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #facc15, #f59e0b);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1rem;
+            color: #0b0d10;
+            flex-shrink: 0;
+        }
+
+        .user-chip .who {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-chip .who span {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #fff;
+        }
+
+        .user-chip .who small {
+            font-size: 0.65rem;
+            color: rgba(255, 255, 255, 0.35);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .btn-ghost {
+            background: rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            transition: all 0.2s;
+        }
+
+        .btn-ghost:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+        }
+
+        .btn-sm {
+            font-size: 0.75rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 10px;
+        }
+
+        .btn-block {
+            width: 100%;
+            justify-content: center;
+        }
+
+        /* ── Main ── */
+        .main {
+            padding-left: 1.5rem;
+            min-height: 100vh;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            padding: 0.5rem 0 1.5rem 0;
+        }
+
+        .topbar .title .eyebrow {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            font-weight: 500;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.25);
+        }
+
+        .topbar .title h1 {
+            font-family: 'Oswald', sans-serif;
+            font-weight: 700;
+            font-size: 2.4rem;
+            letter-spacing: -0.02em;
+            color: #fff;
+            line-height: 1.1;
+        }
+
+        .topbar .title h1 span {
+            color: #facc15;
+        }
+
+        .menu-toggle {
+            display: none;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            color: #fff;
+            padding: 0.5rem 1rem;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 0.9rem;
+            padding: 0.7rem 1.5rem;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #facc15, #f59e0b);
+            color: #0b0d10;
+            box-shadow: 0 4px 20px rgba(250, 204, 21, 0.15);
+            font-weight: 700;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(250, 204, 21, 0.25);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-danger {
+            background: rgba(220, 38, 38, 0.15);
+            color: #f87171;
+            border: 1px solid rgba(220, 38, 38, 0.15);
+        }
+
+        .btn-danger:hover {
+            background: rgba(220, 38, 38, 0.25);
+        }
+
+        .btn-ghost-sm {
+            background: transparent;
+            color: rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 0.3rem 0.8rem;
+            font-size: 0.7rem;
+            border-radius: 8px;
+        }
+
+        .btn-ghost-sm:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+        }
+
+        /* ── Panel ── */
+        .panel {
+            background: rgba(18, 22, 28, 0.70);
+            backdrop-filter: blur(16px) saturate(1.2);
+            -webkit-backdrop-filter: blur(16px) saturate(1.2);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 1.75rem 1.75rem 2rem;
+            overflow: hidden;
+        }
+
+        .panel-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .panel-head h3 {
+            font-family: 'Oswald', sans-serif;
+            font-weight: 600;
+            font-size: 1.2rem;
+            letter-spacing: 0.02em;
+            color: #fff;
+        }
+
+        .search {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .search input,
+        .search select {
+            padding: 0.6rem 1rem;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            color: #fff;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            min-width: 160px;
+        }
+
+        .search input::placeholder {
+            color: rgba(255, 255, 255, 0.2);
+        }
+
+        .search input:focus,
+        .search select:focus {
+            border-color: #facc15;
+            box-shadow: 0 0 0 4px rgba(250, 204, 21, 0.06);
+        }
+
+        .search select option {
+            background: #181e26;
+            color: #fff;
+        }
+
+        /* ── Table ── */
+        .table-wrap {
+            overflow-x: auto;
+            margin: 0 -0.25rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        thead th {
+            text-align: left;
+            padding: 0.75rem 0.75rem 0.75rem 0;
+            font-weight: 600;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: rgba(255, 255, 255, 0.25);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            white-space: nowrap;
+        }
+
+        thead th:first-child {
+            padding-left: 0;
+        }
+        thead th:last-child {
+            padding-right: 0;
+        }
+
+        tbody td {
+            padding: 0.75rem 0.75rem 0.75rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            color: rgba(255, 255, 255, 0.75);
+            vertical-align: middle;
+        }
+
+        tbody td:first-child {
+            padding-left: 0;
+        }
+        tbody td:last-child {
+            padding-right: 0;
+        }
+
+        tbody tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .cell-vehicle {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .cell-vehicle .thumb {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.04);
+            overflow: hidden;
+            flex-shrink: 0;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .cell-vehicle .thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .cell-vehicle .thumb .no-img {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.1);
+        }
+
+        .cell-vehicle .info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .cell-vehicle .info .name {
+            font-weight: 500;
+            color: #fff;
+        }
+
+        .cell-vehicle .info .sub {
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.3);
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: 0.02em;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.2rem 0.7rem;
+            border-radius: 100px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            background: rgba(255, 255, 255, 0.06);
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .status-badge.in_stock {
+            background: rgba(34, 197, 94, 0.12);
+            color: #4ade80;
+        }
+        .status-badge.reserved {
+            background: rgba(250, 204, 21, 0.12);
+            color: #facc15;
+        }
+        .status-badge.checked_out {
+            background: rgba(59, 130, 246, 0.12);
+            color: #60a5fa;
+        }
+        .status-badge.sold {
+            background: rgba(156, 163, 175, 0.12);
+            color: #9ca3af;
+        }
+
+        .actions {
+            display: flex;
+            gap: 0.3rem;
+        }
+
+        .actions button {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            padding: 0.3rem 0.5rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .actions button:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+        }
+
+        .actions button.buy:hover {
+            color: #4ade80;
+        }
+
+        .actions button.edit:hover {
+            color: #facc15;
+        }
+        .actions button.delete:hover {
+            color: #f87171;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: rgba(255, 255, 255, 0.2);
+            font-size: 0.95rem;
+        }
+
+        .empty-state .icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.75rem;
+            display: block;
+        }
+
+        /* ── Modal ── */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+
+        .modal-backdrop.open {
+            display: flex;
+        }
+
+        .modal {
+            background: rgba(18, 22, 28, 0.92);
+            backdrop-filter: blur(24px) saturate(1.3);
+            -webkit-backdrop-filter: blur(24px) saturate(1.3);
+            border-radius: 28px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.7);
+            max-width: 560px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 0;
+            animation: modalFadeIn 0.25s ease;
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.96) translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .modal-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.5rem 1.75rem 0.5rem 1.75rem;
+        }
+
+        .modal-head h3 {
+            font-family: 'Oswald', sans-serif;
+            font-weight: 600;
+            font-size: 1.4rem;
+            color: #fff;
+        }
+
+        .icon-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: none;
+            color: rgba(255, 255, 255, 0.3);
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+        }
+
+        .modal-body {
+            padding: 1.25rem 1.75rem 0.5rem 1.75rem;
+        }
+
+        .modal-foot {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            padding: 1.25rem 1.75rem 1.75rem 1.75rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .field {
+            margin-bottom: 0.75rem;
+        }
+
+        .field label {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: rgba(255, 255, 255, 0.35);
+            margin-bottom: 0.25rem;
+        }
+
+        .field input,
+        .field select {
+            width: 100%;
+            padding: 0.65rem 0.85rem;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            color: #fff;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+            outline: none;
+        }
+
+        .field input::placeholder {
+            color: rgba(255, 255, 255, 0.15);
+        }
+
+        .field input:focus,
+        .field select:focus {
+            border-color: #facc15;
+            background: rgba(255, 255, 255, 0.06);
+            box-shadow: 0 0 0 4px rgba(250, 204, 21, 0.06);
+        }
+
+        .field select option {
+            background: #181e26;
+            color: #fff;
+        }
+
+        /* ── Toast ── */
+        .toast-wrap {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            max-width: 380px;
+            width: 100%;
+        }
+
+        .toast {
+            background: rgba(18, 22, 28, 0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            padding: 1rem 1.25rem;
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            animation: toastSlide 0.3s ease;
+            color: #fff;
+            font-size: 0.9rem;
+        }
+
+        .toast .toast-icon {
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .toast.success .toast-icon {
+            color: #4ade80;
+        }
+        .toast.error .toast-icon {
+            color: #f87171;
+        }
+        .toast.info .toast-icon {
+            color: #60a5fa;
+        }
+
+        @keyframes toastSlide {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 1024px) {
+            .app-shell {
+                grid-template-columns: 1fr;
+                padding: 1rem;
+            }
+
+            .sidebar {
+                position: fixed;
+                top: 1rem;
+                left: 1rem;
+                bottom: 1rem;
+                width: 280px;
+                z-index: 100;
+                transform: translateX(-120%);
+                opacity: 0;
+                border-radius: 20px;
+                padding: 1.5rem;
+                min-height: auto;
+                height: auto;
+                max-height: calc(100vh - 2rem);
+                overflow-y: auto;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+                opacity: 1;
+            }
+
+            .main {
+                padding-left: 0;
+            }
+
+            .menu-toggle {
+                display: inline-flex;
+            }
+
+            .topbar .title h1 {
+                font-size: 1.8rem;
+            }
+
+            .panel {
+                padding: 1.25rem;
+            }
+
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+
+            .modal {
+                max-width: 100%;
+                margin: 1rem;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .topbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .topbar .title h1 {
+                font-size: 1.5rem;
+            }
+
+            .search {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .search input,
+            .search select {
+                width: 100%;
+                min-width: unset;
+            }
+
+            .panel-head {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .panel-head h3 {
+                font-size: 1rem;
+            }
+
+            .table-wrap {
+                margin: 0 -0.75rem;
+                padding: 0 0.75rem;
+            }
+
+            table {
+                font-size: 0.75rem;
+            }
+
+            .cell-vehicle .thumb {
+                width: 36px;
+                height: 36px;
+            }
+
+            .actions button {
+                padding: 0.2rem 0.3rem;
+                font-size: 0.7rem;
+            }
+
+            .modal {
+                border-radius: 20px;
+            }
+
+            .modal-head {
+                padding: 1.25rem 1.25rem 0.25rem 1.25rem;
+            }
+
+            .modal-body {
+                padding: 1rem 1.25rem 0.25rem 1.25rem;
+            }
+
+            .modal-foot {
+                padding: 1rem 1.25rem 1.25rem 1.25rem;
+                flex-direction: column;
+            }
+
+            .modal-foot .btn {
+                width: 100%;
+            }
+
+            .toast-wrap {
+                left: 1rem;
+                right: 1rem;
+                bottom: 1rem;
+                max-width: 100%;
+            }
+        }
+
+        /* scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ── Background ── -->
+    <div class="app-backdrop" aria-hidden="true"></div>
+
+    <!-- ── 3D Background Car ── -->
+    <div class="bg3d" aria-hidden="true">
+        <model-viewer
+            src="https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@master/2.0/ToyCar/glTF-Binary/ToyCar.glb"
+            alt="3D car"
+            auto-rotate
+            rotation-per-second="24deg"
+            disable-zoom
+            exposure="1.1"
+            shadow-intensity="1">
+        </model-viewer>
+    </div>
+
+    <!-- ── App Shell ── -->
+    <div class="app-shell">
+
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="brand">
+                <div class="mark">AS</div>
+                <div class="name">AutoStock<small>Dealer Console</small></div>
+            </div>
+            <nav class="nav">
+                <a href="dashboard.html"><span class="dot"></span>Dashboard</a>
+                <a href="cars.html" class="active"><span class="dot"></span>Inventory (Stock)</a>
+                <a href="checkinout.html"><span class="dot"></span>Check In / Check Out</a>
+                <a href="booking.html"><span class="dot"></span>Bookings &amp; Payments</a>
+            </nav>
+            <div class="user-box">
+                <div class="user-chip">
+                    <div class="avatar" id="currentUserAvatar">J</div>
+                    <div class="who">
+                        <span id="currentUserName">James Dealer</span>
+                        <small id="currentUserRole">Admin</small>
+                    </div>
+                </div>
+                <button class="btn btn-ghost btn-block btn-sm" onclick="logout()">Log Out</button>
+            </div>
+        </aside>
+
+        <!-- Main -->
+        <main class="main">
+            <div class="topbar">
+                <div class="title">
+                    <div class="eyebrow">// Stock</div>
+                    <h1>Inventory</h1>
+                </div>
+                <button class="menu-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰ Menu</button>
+                <button class="btn btn-primary" onclick="openCarModal()">+ Add Vehicle</button>
+            </div>
+
+            <div class="panel">
+                <div class="panel-head">
+                    <h3>All Vehicles</h3>
+                    <div class="search">
+                        <input type="text" id="searchInput" placeholder="Search make, model, VIN…" />
+                        <select id="statusFilter">
+                            <option value="">All Statuses</option>
+                            <option value="in_stock">In Stock</option>
+                            <option value="reserved">Reserved</option>
+                            <option value="checked_out">Checked Out</option>
+                            <option value="sold">Sold</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="table-wrap" id="carsTableWrap">
+                    <div class="empty-state">Loading vehicles…</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ── Modal ── -->
+    <div class="modal-backdrop" id="carModalBackdrop">
+        <div class="modal">
+            <div class="modal-head">
+                <h3 id="carModalTitle">Add Vehicle</h3>
+                <button class="icon-btn" onclick="closeCarModal()">✕</button>
+            </div>
+            <form id="carForm">
+                <div class="modal-body">
+                    <input type="hidden" id="carId" />
+                    <div class="grid-2">
+                        <div class="field">
+                            <label for="vin">VIN</label>
+                            <input type="text" id="vin" placeholder="1HGCM82633A123456" required />
+                        </div>
+                        <div class="field">
+                            <label for="plateNumber">Plate Number</label>
+                            <input type="text" id="plateNumber" placeholder="ABC-1234" />
+                        </div>
+                    </div>
+                    <div class="grid-2">
+                        <div class="field">
+                            <label for="make">Make</label>
+                            <input type="text" id="make" placeholder="Toyota" required />
+                        </div>
+                        <div class="field">
+                            <label for="model">Model</label>
+                            <input type="text" id="model" placeholder="Camry" required />
+                        </div>
+                    </div>
+                    <div class="grid-2">
+                        <div class="field">
+                            <label for="year">Year</label>
+                            <input type="number" id="year" min="1950" max="2100" placeholder="2024" required />
+                        </div>
+                        <div class="field">
+                            <label for="color">Color</label>
+                            <input type="text" id="color" placeholder="Midnight Blue" />
+                        </div>
+                    </div>
+                    <div class="grid-2">
+                        <div class="field">
+                            <label for="price">Price (USD)</label>
+                            <input type="number" id="price" min="0" step="0.01" placeholder="35000" required />
+                        </div>
+                        <div class="field">
+                            <label for="mileage">Mileage</label>
+                            <input type="number" id="mileage" min="0" placeholder="12000" />
+                        </div>
+                    </div>
+                    <div class="field" id="statusFieldWrap" style="display:none">
+                        <label for="status">Status</label>
+                        <select id="status">
+                            <option value="in_stock">In Stock</option>
+                            <option value="reserved">Reserved</option>
+                            <option value="checked_out">Checked Out</option>
+                            <option value="sold">Sold</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="imageUrl">Image URL (optional)</label>
+                        <input type="text" id="imageUrl" placeholder="https://images.unsplash.com/photo-…" />
+                    </div>
+                </div>
+                <div class="modal-foot">
+                    <button type="button" class="btn btn-ghost" onclick="closeCarModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="carFormSubmit">Add Vehicle</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ── Buy Confirmation Modal ── -->
+    <div class="modal-backdrop" id="buyModalBackdrop">
+        <div class="modal" style="max-width:480px;">
+            <div class="modal-head">
+                <h3>Buy This Car?</h3>
+                <button class="icon-btn" onclick="closeBuyModal()">✕</button>
+            </div>
+            <div class="modal-body" id="buyModalBody">
+                <!-- filled dynamically -->
+            </div>
+            <div class="modal-foot">
+                <button type="button" class="btn btn-ghost" onclick="closeBuyModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="confirmBuy()">I buy this car</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Toast ── -->
+    <div class="toast-wrap" id="toastWrap"></div>
+
+    <!-- ── Scripts ── -->
+    <script src="js/api.js?v=20260802-1"></script>
+    <script src="js/auth.js?v=20260802-1"></script>
+    <script src="js/cars.js?v=20260802-1"></script>
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+
+</body>
+</html>

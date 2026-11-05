@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign In · AutoStock</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <style>
+        /* ── Reset & Base ── */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            overflow-x: hidden;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #0a0c10;
+            color: #fff;
+            padding: 1.5rem;
+        }
+
+        /* ── Background with car image ── */
+        .auth-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background:
+                linear-gradient(135deg,
+                    rgba(5, 8, 12, 0.88) 0%,
+                    rgba(10, 14, 20, 0.74) 45%,
+                    rgba(16, 10, 8, 0.88) 100%),
+                url('https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=1600&q=80') center/cover no-repeat;
+            background-attachment: fixed;
+        }
+
+        /* subtle blueprint grid */
+        .auth-backdrop::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px);
+            background-size: 46px 46px;
+            mask-image: radial-gradient(ellipse at 50% 40%, #000 30%, transparent 75%);
+            -webkit-mask-image: radial-gradient(ellipse at 50% 40%, #000 30%, transparent 75%);
+            pointer-events: none;
+        }
+
+        /* animated glow orbs */
+        .auth-backdrop::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 18% 85%, rgba(250, 204, 21, 0.16) 0%, transparent 45%),
+                radial-gradient(ellipse at 85% 15%, rgba(255, 82, 82, 0.12) 0%, transparent 40%),
+                radial-gradient(ellipse at 70% 90%, rgba(59, 130, 246, 0.08) 0%, transparent 45%);
+            animation: glowPulse 9s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes glowPulse {
+            0%,
+            100% {
+                opacity: 0.55;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.04);
+            }
+        }
+
+        /* ── Top Brand Bar ── */
+        .auth-topbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 6;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.5rem 2.5rem;
+        }
+
+        .auth-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .auth-brand .logo-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, #facc15, #f59e0b);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Oswald', sans-serif;
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: #0b0d10;
+            letter-spacing: 0.04em;
+            box-shadow: 0 8px 24px rgba(250, 204, 21, 0.25);
+            flex-shrink: 0;
+        }
+
+        .auth-brand .logo-text {
+            font-family: 'Oswald', sans-serif;
+            font-weight: 600;
+            font-size: 1.4rem;
+            letter-spacing: 0.04em;
+            color: #fff;
+        }
+
+        .auth-brand .logo-text span {
+            color: #facc15;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.64rem;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.55);
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            padding: 0.45rem 1rem;
+            border-radius: 100px;
+            backdrop-filter: blur(6px);
+        }
+
+        .pulse-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #4ade80;
+            box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.55);
+            animation: dotPulse 2s infinite;
+        }
+
+        @keyframes dotPulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.5);
+            }
+            70% {
+                box-shadow: 0 0 0 9px rgba(74, 222, 128, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(74, 222, 128, 0);
+            }
+        }
+
+        /* ── Main Shell ── */
+        .auth-shell {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 1180px;
+            display: grid;
+            grid-template-columns: 1.05fr 0.95fr;
+            gap: 3rem;
+            align-items: center;
+            min-height: 82vh;
+        }
+
+        /* ── Left Visual ── */
+        .auth-visual {
+            padding: 3rem 1rem 2rem 0;
+        }
+
+        .auth-visual .tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 500;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.06);
+            display: inline-block;
+            padding: 0.35rem 1rem;
+            border-radius: 100px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(2px);
+            margin-bottom: 1.5rem;
+        }
+
+        .auth-visual h1 {
+            font-family: 'Oswald', sans-serif;
+            font-weight: 700;
+            font-size: 3.1rem;
+            line-height: 1.08;
+            letter-spacing: -0.02em;
+            color: #fff;
+            max-width: 500px;
+            text-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .auth-visual h1 span {
+            color: #facc15;
+        }
+
+        .auth-visual .lead {
+            font-size: 1.02rem;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.7);
+            max-width: 420px;
+            margin-top: 1rem;
+            line-height: 1.6;
+            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        /* ── 3D Car Showcase ── */
+        .mascot {
+            position: relative;
+            margin-top: 1.75rem;
+            background: rgba(255, 255, 255, 0.025);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 26px;
+            padding: 0.5rem 0.5rem 0.25rem;
+            box-shadow: 0 24px 70px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+            overflow: hidden;
+            max-width: 460px;
+        }
+
+        .mascot::before {
+            content: '🏎️';
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 5.5rem;
+            opacity: 0.06;
+            z-index: 0;
+            pointer-events: none;
+            letter-spacing: 0.4em;
+        }
+
+        .mascot::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at 50% 110%, rgba(250, 204, 21, 0.08) 0%, transparent 55%);
+            pointer-events: none;
+        }
+
+        .mascot-grid {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.5rem;
+        }
+
+        .mascot model-viewer {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            height: 230px;
+            display: block;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 18px;
+        }
+
+        .mascot-caption {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.66rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.42);
+            text-align: center;
+            padding: 0.6rem 0 0.55rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            margin-top: 0.5rem;
+        }
+
+        .mascot-caption .paw {
+            font-size: 0.8rem;
+        }
+
+        /* ── Stats ── */
+        .auth-visual .stats-row {
+            display: flex;
+            gap: 2.5rem;
+            margin-top: 2rem;
+            padding-top: 1.75rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .auth-visual .stats-row .stat {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .auth-visual .stats-row .stat .num {
+            font-family: 'Oswald', sans-serif;
+            font-weight: 600;
+            font-size: 1.75rem;
+            color: #fff;
+            letter-spacing: 0.02em;
+        }
+
+        .auth-visual .stats-row .stat .label {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: rgba(255, 255, 255, 0.4);
+            margin-top: 0.1rem;
+        }
+
+        /* ── Right Panel ── */
+        .auth-panel {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .auth-card {
+            background: rgba(16, 20, 26, 0.82);
+            backdrop-filter: blur(22px) saturate(1.2);
+            -webkit-backdrop-filter: blur(22px) saturate(1.2);
+            border-radius: 30px;
+            padding: 2.75rem 2.5rem 2.5rem;
+            width: 100%;
+            max-width: 430px;
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+            position: relative;
+            animation: cardIn 0.7s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+        }
+
+        .auth-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 15%;
+            right: 15%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(250, 204, 21, 0.7), transparent);
+            border-radius: 0 0 4px 4px;
+        }
+
+        @keyframes cardIn {
+            from {
+                opacity: 0;
+                transform: translateY(26px) scale(0.98);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* ── Card Logo ── */
+        .auth-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.6rem;
+        }
+
+        .auth-logo .logo-icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #facc15, #f59e0b);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Oswald', sans-serif;
+            font-weight: 700;
+            font-size: 1.3rem;
+            color: #0b0d10;
+            letter-spacing: 0.04em;
+            box-shadow: 0 8px 24px rgba(250, 204, 21, 0.25);
+            flex-shrink: 0;
+        }
+
+        .auth-logo .logo-text {
+            font-family: 'Oswald', sans-serif;
+            font-weight: 600;
+            font-size: 1.5rem;
+            letter-spacing: 0.04em;
+            color: #fff;
+        }
+
+        .auth-logo .logo-text span {
+            color: #facc15;
+        }
+
+        /* ── Card Content ── */
+        .auth-card .eyebrow {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            font-weight: 500;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.32);
+            margin-bottom: 0.25rem;
+        }
+
+        .auth-card h2 {
+            font-family: 'Oswald', sans-serif;
+            font-weight: 600;
+            font-size: 1.85rem;
+            letter-spacing: -0.02em;
+            color: #fff;
+            line-height: 1.2;
+        }
+
+        .auth-card .sub {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 0.2rem;
+            margin-bottom: 1.75rem;
+        }
+
+        /* ── Form ── */
+        .field {
+            margin-bottom: 1.25rem;
+        }
+
+        .field label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 0.4rem;
+        }
+
+        .field input {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            color: #fff;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+            outline: none;
+        }
+
+        .field input::placeholder {
+            color: rgba(255, 255, 255, 0.2);
+            font-weight: 400;
+        }
+
+        .field input:focus {
+            border-color: #facc15;
+            background: rgba(255, 255, 255, 0.07);
+            box-shadow: 0 0 0 4px rgba(250, 204, 21, 0.08);
+        }
+
+        .field input:-webkit-autofill {
+            -webkit-box-shadow: 0 0 0 1000px rgba(16, 20, 26, 0.92) inset !important;
+            -webkit-text-fill-color: #fff !important;
+        }
+
+        /* password toggle */
+        .pass-wrap {
+            position: relative;
+        }
+
+        .pass-wrap input {
+            padding-right: 3rem;
+        }
+
+        .pass-toggle {
+            position: absolute;
+            right: 0.45rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 2.2rem;
+            height: 2.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .pass-toggle:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* ── Error ── */
+        .form-error {
+            background: rgba(220, 38, 38, 0.12);
+            border: 1px solid rgba(220, 38, 38, 0.2);
+            border-radius: 12px;
+            padding: 0.65rem 1rem;
+            font-size: 0.85rem;
+            color: #f87171;
+            margin-bottom: 1.25rem;
+            display: none;
+        }
+
+        .form-error.visible {
+            display: block;
+        }
+
+        /* ── Button ── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 0.95rem;
+            padding: 0.85rem 1.5rem;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #facc15, #f59e0b);
+            color: #0b0d10;
+            box-shadow: 0 4px 20px rgba(250, 204, 21, 0.2);
+            margin-top: 0.5rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(250, 204, 21, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* ── Auth Switch ── */
+        .auth-switch {
+            text-align: center;
+            margin-top: 1.75rem;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .auth-switch a {
+            color: #facc15;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .auth-switch a:hover {
+            color: #fde047;
+            text-decoration: underline;
+        }
+
+        /* ── Fullscreen Login Loader ── */
+        .login-loader {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(6, 8, 12, 0.94);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+
+        .login-loader.open {
+            display: flex;
+            animation: loaderFadeIn 0.25s ease;
+        }
+
+        @keyframes loaderFadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .loader-card {
+            text-align: center;
+            width: 100%;
+            max-width: 400px;
+            background: rgba(16, 20, 26, 0.92);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 26px;
+            padding: 2.75rem 2.5rem 2.25rem;
+            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.7);
+        }
+
+        .loader-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.62rem;
+            font-weight: 500;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.3);
+            margin-bottom: 1.25rem;
+        }
+
+        .loader-zone {
+            height: 64px;
+            position: relative;
+            margin-bottom: 0.25rem;
+        }
+
+        .loader-zone::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 4px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 4px;
+        }
+
+        .loader-zone::after {
+            content: '';
+            position: absolute;
+            left: 10%;
+            right: 10%;
+            bottom: 4px;
+            height: 2px;
+            background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.14) 0 10px, transparent 10px 18px);
+            border-radius: 4px;
+            animation: trackMove 0.8s linear infinite;
+        }
+
+        @keyframes trackMove {
+            from {
+                background-position: 0 0;
+            }
+            to {
+                background-position: 36px 0;
+            }
+        }
+
+        .loader-car {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            font-size: 2.7rem;
+            transform: translate(-50%, -50%);
+            animation: carDrive 1.5s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+        }
+
+        @keyframes carDrive {
+            0% {
+                transform: translate(calc(-50% - 70px), -50%);
+            }
+            50% {
+                transform: translate(calc(-50% + 70px), -50%);
+            }
+            100% {
+                transform: translate(calc(-50% - 70px), -50%);
+            }
+        }
+
+        .loader-track {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 100px;
+            margin: 1.5rem 0 1.1rem;
+            overflow: hidden;
+        }
+
+        .loader-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #facc15, #f59e0b);
+            border-radius: 100px;
+            transition: width 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 14px rgba(250, 204, 21, 0.4);
+        }
+
+        .loader-text {
+            font-size: 0.92rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.65);
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 1024px) {
+            .auth-shell {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+                min-height: auto;
+                max-width: 500px;
+            }
+
+            .auth-visual {
+                padding: 4rem 0 0.5rem;
+                text-align: center;
+            }
+
+            .auth-visual h1 {
+                font-size: 2.4rem;
+                max-width: 100%;
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            .auth-visual .lead {
+                max-width: 100%;
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            .mascot {
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            .auth-visual .stats-row {
+                justify-content: center;
+            }
+
+            .auth-panel {
+                justify-content: center;
+            }
+
+            .auth-card {
+                padding: 2rem 1.5rem;
+                max-width: 100%;
+            }
+
+            .auth-visual .tag {
+                margin-left: auto;
+                margin-right: auto;
+                display: inline-block;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .auth-topbar {
+                padding: 1.1rem 1.25rem;
+            }
+
+            .status-pill {
+                font-size: 0.55rem;
+                padding: 0.35rem 0.7rem;
+            }
+
+            .auth-brand .logo-text {
+                font-size: 1.15rem;
+            }
+
+            .auth-brand .logo-icon {
+                width: 36px;
+                height: 36px;
+                font-size: 1.05rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .auth-card {
+                padding: 1.6rem 1.25rem;
+                border-radius: 22px;
+            }
+
+            .auth-visual h1 {
+                font-size: 1.9rem;
+            }
+
+            .mascot {
+                display: none;
+            }
+
+            .auth-visual .stats-row {
+                gap: 1.5rem;
+                flex-wrap: wrap;
+            }
+
+            .auth-visual .stats-row .stat .num {
+                font-size: 1.4rem;
+            }
+
+            .auth-logo .logo-icon {
+                width: 36px;
+                height: 36px;
+                font-size: 1rem;
+            }
+
+            .auth-logo .logo-text {
+                font-size: 1.2rem;
+            }
+
+            .auth-card h2 {
+                font-size: 1.55rem;
+            }
+
+            .loader-card {
+                padding: 2rem 1.5rem 1.75rem;
+            }
+        }
+
+        /* scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ── Background ── -->
+    <div class="auth-backdrop" aria-hidden="true"></div>
+
+    <!-- ── Top Brand Bar ── -->
+    <header class="auth-topbar">
+        <div class="auth-brand">
+            <div class="logo-icon">AS</div>
+            <div class="logo-text">Auto<span>Stock</span></div>
+        </div>
+        <div class="status-pill"><span class="pulse-dot"></span> Systems operational</div>
+    </header>
+
+    <!-- ── Shell ── -->
+    <div class="auth-shell">
+
+        <!-- Left: Visual -->
+        <section class="auth-visual">
+            <div class="tag">// AutoStock Dealer Console</div>
+            <h1>Every car on the lot,<br /><span>tracked to the mile.</span></h1>
+            <p class="lead">Stock, test drives, and reservations for your dealership&nbsp;— one dashboard, no spreadsheets.</p>
+
+            <!-- 3D Car Showcase -->
+            <div class="mascot">
+                <div class="mascot-grid">
+                    <model-viewer
+                        id="mascotCar3d"
+                        src="https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@master/2.0/ToyCar/glTF-Binary/ToyCar.glb"
+                        alt="3D car showroom model"
+                        auto-rotate
+                        rotation-per-second="22deg"
+                        disable-zoom
+                        shadow-intensity="1"
+                        shadow-softness="0.9"
+                        exposure="1.15"
+                        camera-orbit="-35deg 74deg 2.6m"
+                        camera-target="0m 0m 0m">
+                    </model-viewer>
+                </div>
+                <div class="mascot-caption"><span class="paw">🏎️</span> 3D showroom car</div>
+            </div>
+
+            <div class="stats-row">
+                <div class="stat">
+                    <span class="num">12k+</span>
+                    <span class="label">Vehicles tracked</span>
+                </div>
+                <div class="stat">
+                    <span class="num">98%</span>
+                    <span class="label">Inventory accuracy</span>
+                </div>
+                <div class="stat">
+                    <span class="num">4.9★</span>
+                    <span class="label">Dealer rating</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right: Login Card -->
+        <section class="auth-panel">
+            <div class="auth-card">
+
+                <div class="auth-logo">
+                    <div class="logo-icon">AS</div>
+                    <div class="logo-text">Auto<span>Stock</span></div>
+                </div>
+
+                <div class="eyebrow">Dealer Login</div>
+                <h2>Welcome back</h2>
+                <div class="sub">Sign in to manage inventory and check-ins.</div>
+
+                <div class="form-error" id="formError"></div>
+
+                <form id="loginForm" novalidate>
+                    <div class="field">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" placeholder="you@dealership.com" required />
+                    </div>
+                    <div class="field">
+                        <label for="password">Password</label>
+                        <div class="pass-wrap">
+                            <input type="password" id="password" name="password" placeholder="••••••••" required />
+                            <button type="button" class="pass-toggle" id="togglePassword" title="Show password">👁</button>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">Sign In</button>
+                </form>
+
+                <div class="auth-switch">
+                    New to AutoStock? <a href="register.html">Create an account</a>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- ── Fullscreen Login Loader ── -->
+    <div class="login-loader" id="loginLoader">
+        <div class="loader-card">
+            <div class="loader-label">AutoStock // Secure Sign-In</div>
+            <div class="loader-zone">
+                <div class="loader-car">🏎️</div>
+            </div>
+            <div class="loader-track">
+                <div class="loader-bar" id="loaderBar"></div>
+            </div>
+            <div class="loader-text" id="loaderText">Verifying credentials…</div>
+        </div>
+    </div>
+
+<!-- ── Scripts ── -->
+<script src="./js/api.js?v=20260805b"></script>
+    <script src="./js/auth.js?v=20260805b"></script>
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+
+</body>
+</html>
+
