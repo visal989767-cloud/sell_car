@@ -93,14 +93,14 @@
                 const text = await response.text();
                 console.error('Non-JSON API response', { url, status: response.status, contentType, snippet: text.substring(0, 200) });
                 if (response.status === 403) {
-                    return { success: false, message: 'The login service is not connected yet. Please try again later.' };
+                    return { success: false, message: 'Sign-in is temporarily unavailable. Please try again later.' };
                 }
                 return { success: false, message: `Server error (${response.status}) – check the API URL.` };
             }
             const data = await response.json();
             if (!response.ok) {
                 if (response.status === 403 && data.error && data.error.code === '403') {
-                    return { success: false, message: 'The login service is not connected yet. Please try again later.' };
+                    return { success: false, message: 'Sign-in is temporarily unavailable. Please try again later.' };
                 }
                 return { success: false, message: data.message || (data.error && data.error.message) || 'Request failed' };
             }
